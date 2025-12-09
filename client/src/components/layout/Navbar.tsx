@@ -32,7 +32,7 @@ export default function Navbar() {
         <Link href="/" className={cn("text-2xl font-bold font-heading tracking-tight flex items-center gap-2", 
             isHome && !isScrolled ? "text-white" : "text-foreground"
           )}>
-            Drive<span className="text-primary">Ease</span>
+            Meshwar <span className="text-primary">روح مشوار</span>
         </Link>
 
         {/* Desktop Links */}

@@ -9,7 +9,7 @@ export default function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-12">
           <div className="col-span-1 md:col-span-1">
             <Link href="/" className="text-2xl font-bold font-heading tracking-tight flex items-center gap-2 mb-4">
-                Drive<span className="text-primary">Ease</span>
+                Meshwar <span className="text-primary">روح مشوار</span>
             </Link>
             <p className="text-muted-foreground text-sm leading-relaxed">
               Premium vehicle rental service providing luxury and comfort for your journeys.
@@ -45,7 +45,7 @@ export default function Footer() {
           </div>
         </div>
         <div className="pt-8 border-t border-border text-center text-sm text-muted-foreground">
-          © 2024 DriveEase. All rights reserved.
+          © 2024 Meshwar. All rights reserved.
         </div>
       </div>
     </footer>

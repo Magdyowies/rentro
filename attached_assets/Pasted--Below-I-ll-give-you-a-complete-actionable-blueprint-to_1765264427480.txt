@@ -1,0 +1,341 @@
+ Below I’ll give you a complete, actionable blueprint to build a polished, modern Next.js UI (design + frontend architecture + API surface + Replit deployment instructions) (Vechile Rental Managment System) tailored to the SQL schema you gave me (vehicles / bookings / payments / users / wallets / chat / reviews). I’ll cover everything a dev or small team needs to start building an eye-catching, production-grade web app on Replit — file structure, components, styling system, data modeling (Prisma), sample API routes, auth, images, testing, accessibility, performance and deployment notes.
+
+I’ll reference the database schema you uploaded where relevant.   
+
+---
+
+# 1 — High level product & UI goals
+
+* **Primary users:** Customers (search & book cars), Vendors (manage fleet), Admins (reports).
+* **Primary pages:** Marketing home, vehicle search & filters, vehicle details, booking flow (calendar + price calc), user dashboard (bookings, wallet, reviews), vendor dashboard (vehicles, bookings), admin panel (reports).
+* **Visual style:** Modern, minimal, high-contrast CTAs, large imagery, card-based lists, micro-animations using Framer Motion.
+* **Mobile-first & responsive:** All pages must look great on mobile, tablet, desktop.
+* **Branding system:** 2 primary colors (accent + neutral), 3 text sizes, rounded cards, soft shadows, clear CTA hierarchy.
+
+---
+
+# 2 — Tech stack (recommended)
+
+* Frontend framework: **Next.js 14+ (App Router)**
+* UI + styling: **Tailwind CSS** + optional component primitives (shadcn/ui or Radix + Tailwind).
+* Animations: **Framer Motion** (for subtle transitions).
+* State: Server-components for data fetching + client components for interactive parts; small client-state via React Query (TanStack Query) or SWR.
+* Auth: **NextAuth.js** (JWT + providers) or custom JWT with refresh tokens.
+* DB layer: **Prisma ORM** (Postgres) — introspect or map manually from your SQL schema.
+* Image storage: **Cloud storage** (S3/Backblaze/Cloudflare R2) for vehicle images; serve via CDN + Next/Image.
+* Payments: **Stripe** + “Fawry” fallback (Egypt-specific) as an option in backend payments table.
+* Testing: **Vitest** + **Playwright** (E2E).
+* Lint/format: **ESLint**, **Prettier**, **TypeScript** (strongly recommended).
+* Error monitoring: **Sentry**.
+* Deployment: **Replit** — Node environment (Next.js build + start). Use Replit Secrets for env vars.
+
+---
+
+# 3 — Map SQL schema -> Prisma (example)
+
+Your SQL contains tables for users, vehicles, bookings, payments, wallets, etc. Use Prisma models that mirror that schema. Example Prisma schema (shortened):
+
+```prisma
+// prisma/schema.prisma
+generator client { provider = "prisma-client-js" }
+datasource db { provider = "postgresql" url = env("DATABASE_URL") }
+
+model User {
+  user_id     Int       @id @default(autoincrement())
+  full_name   String
+  email       String    @unique
+  phone       String?   @unique
+  password_hash String
+  role        String    @default("customer")
+  created_at  DateTime  @default(now())
+  updated_at  DateTime  @updatedAt
+  profile     UserProfile?
+  vehicles    Vehicle[] @relation("VendorVehicles")
+  bookings    Booking[]
+  wallet      Wallet?
+}
+
+model UserProfile {
+  profile_id   Int     @id @default(autoincrement())
+  user         User    @relation(fields: [userId], references: [user_id])
+  userId       Int     @unique
+  address      String?
+  city         String?
+  country      String?
+  date_of_birth DateTime?
+  profile_picture String?
+}
+
+model VehicleCategory {
+  category_id  Int     @id @default(autoincrement())
+  category_name String @unique
+  vehicles     Vehicle[]
+}
+
+model Vehicle {
+  vehicle_id  Int     @id @default(autoincrement())
+  vendor      User    @relation("VendorVehicles", fields: [vendorId], references: [user_id])
+  vendorId    Int
+  category    VehicleCategory @relation(fields: [categoryId], references: [category_id])
+  categoryId  Int
+  brand       String
+  model       String
+  year        Int?
+  price_per_day Decimal @db.Decimal(10,2)
+  transmission String?
+  seating_capacity Int?
+  description  String?
+  location_lat Decimal? @db.Decimal(10,7)
+  location_lng Decimal? @db.Decimal(10,7)
+  available   Boolean  @default(true)
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+  images      VehicleImage[]
+  bookings    Booking[]
+}
+```
+
+> This Prisma mapping follows the SQL you provided (users, vehicles, bookings, payments, wallets, promo_codes, reviews, chat_sessions/messages, admin_reports). Use `prisma db pull` if you already have the DB, or write the models by hand to match the SQL. 
+
+---
+
+# 4 — Project file structure (recommended)
+
+```
+/my-app
+├─ app/                      # Next.js App Router pages + layout
+│  ├─ layout.tsx
+│  ├─ page.tsx               # Marketing homepage
+│  ├─ search/
+│  │  └─ page.tsx            # Vehicle search & filters
+│  ├─ vehicle/
+│  │  └─ [id]/page.tsx       # Vehicle detail + booking modal
+│  ├─ dashboard/
+│  │  ├─ customer/
+│  │  ├─ vendor/
+│  │  └─ admin/
+│  └─ api/                   # Next.js server actions or API routes
+├─ components/
+│  ├─ ui/
+│  │  ├─ Button.tsx
+│  │  ├─ Card.tsx
+│  │  └─ ImageCarousel.tsx
+│  ├─ VehicleCard.tsx
+│  └─ BookingForm.tsx
+├─ lib/
+│  ├─ prisma.ts              # Prisma client
+│  ├─ auth.ts                # helpers for auth
+│  └─ stripe.ts
+├─ prisma/
+│  └─ schema.prisma
+├─ public/
+├─ styles/
+│  └─ globals.css (tailwind)
+├─ tests/
+│  ├─ e2e/
+│  └─ unit/
+├─ package.json
+└─ next.config.js
+```
+
+---
+
+# 5 — UI system & component guidance
+
+Design tokens (Tailwind + config):
+
+* Primary accent: `#0ea5a4` (teal)
+* Secondary: `#111827` (dark neutral)
+* Background: `#F8FAFC`
+* Rounded: `rounded-2xl` cards, `gap-4`, `p-4` consistent spacing.
+
+Essential components:
+
+* `TopNav` (brand, search, auth CTA, cart/wallet icon)
+* `Hero` (big image slider + quick search form)
+* `SearchFilters` (date range picker, location autocomplete, price slider, vehicle categories, transmission)
+* `VehicleCard` (image carousel, price tag, badges like “with driver”, rating)
+* `VehicleDetail` (gallery, specs grid, calendar booking widget, price breakdown)
+* `BookingModal` (persistent bottom sheet on mobile; side sheet on desktop)
+* `UserDashboard` Tiles (upcoming bookings, wallet balance, recent reviews)
+* `VendorDashboard` CRUD table + quick-add vehicle modal
+* `AdminPanel` charts (use recharts) + reports
+
+Accessibility:
+
+* All interactive elements keyboard reachable, color contrast >= 4.5:1, images with `alt`, forms with proper labels, focus-visible styles.
+
+Micro-interactions:
+
+* Use Framer Motion for card hover lift, route transitions, booking confirmation micro-animations.
+
+---
+
+# 6 — Data fetching, caching & APIs
+
+* Use Next.js server components for SSR/ISR on major pages (search results & vehicle detail for SEO).
+* Use `app` router server actions or API routes for write actions (bookings, payments).
+* For client interactivity (booking flow), use React Query (cache booking form state, optimistic updates).
+* **Example API route** (Next.js /app/api/bookings/route.ts):
+
+```ts
+// app/api/bookings/route.ts (Next.js App Router)
+import { NextResponse } from 'next/server';
+import prisma from '@/lib/prisma';
+export async function POST(req: Request) {
+  const body = await req.json();
+  // validate body: userId, vehicleId, start/end, withDriver...
+  const booking = await prisma.booking.create({ data: {
+    user_id: body.userId,
+    vehicle_id: body.vehicleId,
+    start_datetime: new Date(body.start),
+    end_datetime: new Date(body.end),
+    with_driver: body.withDriver,
+    total_price: body.totalPrice,
+  }});
+  return NextResponse.json({ booking });
+}
+```
+
+---
+
+# 7 — Booking & price calc UX
+
+* **Booking widget**: date/time picker + number of hours/days. Auto-calc price with breakdown: base price, driver fee, taxes, promo code discount (validate code server-side).
+* **Prevent double booking**: server-side check for overlapping bookings; show conflict UI if slot is taken.
+* **Wallet flow**: allow pay-with-wallet partial payments; record wallet_transactions in DB.
+
+---
+
+# 8 — Auth & security
+
+* **Auth flow**: Email + password + email verification. Social login (Google/FB) optional with NextAuth.
+* **Protect pages**: server-side check user role (admin/vendor/customer) before rendering dashboard pages.
+* **Passwords**: store bcrypt hashed password (your SQL has `password_hash`).
+* **Rate limiting & brute force**: apply rate limit to login endpoints.
+* **Input validation & sanitization**: server-side validation for all endpoints.
+
+---
+
+# 9 — Images, media & galleries
+
+* Use Next/Image for automatic optimization. Store originals on S3/R2 and save URL in `vehicle_images.image_url`. Lazy-load galleries, serve primary image as `priority` for vehicle detail.
+
+---
+
+# 10 — Performance & SEO
+
+* Use ISR/SSG for marketing and vehicle pages where possible.
+* Pre-render search landing for common queries (city + dates).
+* Use `next/image`, compress images, use `font-display: swap`.
+* Lighthouse targets: LCP < 2.5s on good network, CLS < 0.1.
+
+---
+
+# 11 — Testing & quality
+
+* Unit tests: Vitest for components.
+* Integration/E2E: Playwright running in CI to exercise signup, booking flow, payments mocking.
+* Linting: ESLint + Prettier hooks on commit (husky).
+
+---
+
+# 12 — Monitoring & analytics
+
+* Sentry for errors.
+* Use Google Analytics or Plausible for traffic; track funnel events (view vehicle, start booking, payment complete).
+
+---
+
+# 13 — Replit-specific steps (deploy on Replit)
+
+Replit runs a container with environment variables and a visible `PORT`:
+
+1. **Create a Replit project**, choose Node.js or upload your Next.js repo.
+2. **Add secrets (Replit Secrets)**:
+
+   * `DATABASE_URL=postgresql://user:pass@host:port/db`
+   * `NEXTAUTH_SECRET=...`
+   * `STRIPE_SECRET=...`
+   * `S3_KEY`, etc.
+3. **package.json** scripts:
+
+```json
+"scripts": {
+  "dev": "next dev -p $PORT",
+  "build": "next build",
+  "start": "next start -p $PORT"
+}
+```
+
+4. **replit.nix** (if Replit requires Nix): Replit can run Node apps with default. If you need a Postgres database, either use an external managed Postgres (Recommended) or use Replit DB for small prototypes — but match your Prisma provider to Postgres in production.
+5. **Database**: connect to external Postgres (Supabase, Neon, ElephantSQL). Run `npx prisma migrate deploy` or `prisma db push` on first deployment to initialize tables — or import your SQL directly into the DB before connecting. The SQL schema you provided maps to the same models; keep it synced. 
+6. **Start** the app on Replit — Replit will expose a public URL. Use Replit Secrets for env vars instead of .env.
+
+---
+
+# 14 — Example components (quick snippets)
+
+Vehicle Card (Tailwind + TypeScript):
+
+```tsx
+// components/VehicleCard.tsx
+import Link from 'next/link'
+export default function VehicleCard({ v }: { v: any }) {
+  return (
+    <article className="rounded-2xl shadow-md overflow-hidden bg-white hover:shadow-xl transition">
+      <Link href={`/vehicle/${v.vehicle_id}`}>
+        <div className="h-44 w-full relative">
+          <img src={v.primaryImage || '/placeholder.png'} alt={`${v.brand} ${v.model}`} className="object-cover w-full h-full"/>
+        </div>
+        <div className="p-4">
+          <h3 className="text-lg font-semibold">{v.brand} {v.model}</h3>
+          <p className="text-sm text-gray-500">{v.year} • {v.seating_capacity} seats</p>
+          <div className="mt-3 flex items-center justify-between">
+            <span className="text-lg font-bold">${v.price_per_day}</span>
+            <span className="px-3 py-1 text-xs bg-indigo-50 text-indigo-600 rounded-full">Instant book</span>
+          </div>
+        </div>
+      </Link>
+    </article>
+  )
+}
+```
+
+---
+
+# 15 — Admin & reporting
+
+* Admin panel with filters (date range, vendor, status) and export to CSV.
+* Use `admin_reports` table for scheduled report generation (cron job or serverless function creates reports and saves content, recorded in DB). 
+
+---
+
+# 16 — PCI / Payments & compliance
+
+* Use Stripe Checkout or PaymentIntent; never store raw card data on your server. Keep `payments` table for references and statuses only. Implement webhooks to update booking/payment status.
+
+---
+
+# 17 — Roadmap & milestones (recommended timeline for an MVP)
+
+1. Project scaffolding + Tailwind + Prisma + Replit setup.
+2. Auth + user model + registration login.
+3. Seed DB with vehicle data + image handling.
+4. Implement search & vehicle listing.
+5. Vehicle detail + booking widget + server booking endpoint.
+6. Payments integration (Stripe) + wallet basic.
+7. Vendor dashboard CRUD.
+8. Admin reports + analytics.
+9. Testing, accessibility audit, polish.
+
+---
+
+# 18 — Extra helpful tips
+
+* Make search fast: add DB indexes on `vehicles(location_lat, location_lng)` and price fields; also cache common queries. (Your SQL already has helpful indexes.) 
+* Use lazy loading and skeleton loaders for images to improve perceived speed.
+* For internationalization: Next.js i18n or simple locale files (English + Arabic if targeting Egypt).
+* For maps: use Mapbox or Google Maps for location pickers of vehicles.
+
+---

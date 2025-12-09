@@ -1,7 +1,7 @@
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import logo from "@assets/rentora_logo_transparent.png";
+import logo from "@assets/logo.png";
 
 export default function Footer() {
   return (

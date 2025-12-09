@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 
+import logo from "@assets/title_1765265412469.jpg";
+
 export default function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [location] = useLocation();
@@ -29,10 +31,11 @@ export default function Navbar() {
     >
       <div className="container mx-auto px-4 flex items-center justify-between">
         {/* Logo */}
-        <Link href="/" className={cn("text-2xl font-bold font-heading tracking-tight flex items-center gap-2", 
+        <Link href="/" className={cn("text-2xl font-bold font-heading tracking-tight flex items-center gap-3", 
             isHome && !isScrolled ? "text-white" : "text-foreground"
           )}>
-            Meshwar <span className="text-primary">روح مشوار</span>
+            <img src={logo} alt="Rentora Logo" className="h-10 w-auto rounded-lg mix-blend-multiply" />
+            <span>Rentora</span>
         </Link>
 
         {/* Desktop Links */}

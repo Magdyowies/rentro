@@ -1,6 +1,7 @@
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import logo from "@assets/title_1765265412469.jpg";
 
 export default function Footer() {
   return (
@@ -8,8 +9,9 @@ export default function Footer() {
       <div className="container mx-auto px-4">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-12">
           <div className="col-span-1 md:col-span-1">
-            <Link href="/" className="text-2xl font-bold font-heading tracking-tight flex items-center gap-2 mb-4">
-                Meshwar <span className="text-primary">روح مشوار</span>
+            <Link href="/" className="text-2xl font-bold font-heading tracking-tight flex items-center gap-3 mb-4">
+                <img src={logo} alt="Rentora Logo" className="h-8 w-auto rounded-md mix-blend-multiply" />
+                <span>Rentora</span>
             </Link>
             <p className="text-muted-foreground text-sm leading-relaxed">
               Premium vehicle rental service providing luxury and comfort for your journeys.
@@ -45,7 +47,7 @@ export default function Footer() {
           </div>
         </div>
         <div className="pt-8 border-t border-border text-center text-sm text-muted-foreground">
-          © 2024 Meshwar. All rights reserved.
+          © 2024 Rentora. All rights reserved.
         </div>
       </div>
     </footer>

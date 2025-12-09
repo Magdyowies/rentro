@@ -174,7 +174,7 @@ export default function Home() {
                  Ready to start your journey?
                </h2>
                <p className="text-secondary-foreground/80 text-lg mb-8 max-w-lg">
-                 Join thousands of satisfied customers who have found their perfect ride with Meshwar.
+                 Join thousands of satisfied customers who have found their perfect ride with Rentora.
                </p>
                <div className="flex flex-col sm:flex-row gap-4">
                  <Button size="lg" className="rounded-xl h-14 px-8 text-lg font-semibold bg-primary text-primary-foreground hover:bg-primary/90">

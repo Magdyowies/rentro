@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 
-import logo from "@assets/title_1765265412469.jpg";
+import logo from "@assets/rentora_logo_transparent.png";
 
 export default function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -34,7 +34,7 @@ export default function Navbar() {
         <Link href="/" className={cn("text-2xl font-bold font-heading tracking-tight flex items-center gap-3", 
             isHome && !isScrolled ? "text-white" : "text-foreground"
           )}>
-            <img src={logo} alt="Rentora Logo" className="h-10 w-auto rounded-lg mix-blend-multiply" />
+            <img src={logo} alt="Rentora Logo" className="h-10 w-auto" />
             <span>Rentora</span>
         </Link>
 

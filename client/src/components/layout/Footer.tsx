@@ -1,7 +1,7 @@
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import logo from "@assets/title_1765265412469.jpg";
+import logo from "@assets/rentora_logo_transparent.png";
 
 export default function Footer() {
   return (
@@ -10,7 +10,7 @@ export default function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-12">
           <div className="col-span-1 md:col-span-1">
             <Link href="/" className="text-2xl font-bold font-heading tracking-tight flex items-center gap-3 mb-4">
-                <img src={logo} alt="Rentora Logo" className="h-8 w-auto rounded-md mix-blend-multiply" />
+                <img src={logo} alt="Rentora Logo" className="h-8 w-auto" />
                 <span>Rentora</span>
             </Link>
             <p className="text-muted-foreground text-sm leading-relaxed">
